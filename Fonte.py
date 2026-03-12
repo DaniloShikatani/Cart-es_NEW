@@ -102,7 +102,7 @@ if uploaded_file:
             elif 'FISERV' in historico or 'FISERV' in documento: return 'BIN'
             elif 'SFPAY' in historico: return 'SFPAY'
             elif 'SISPAG' in historico: return 'BIN'
-            elif 'Nu Pay' in historico: return 'NUPAY'
+            elif 'PIX TRANSF  Nu Pay' in historico: return 'NUPAY'
 
             return None
 
