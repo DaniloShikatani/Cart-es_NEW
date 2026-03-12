@@ -171,23 +171,7 @@ if uploaded_file:
 
         df_grouped = df_grouped[colunas_ordenadas]
 
-        # ---------------------------------------------------
-        # RESUMO FINANCEIRO
-        # ---------------------------------------------------
-
-        st.subheader("📊 Resumo por canal")
-
-        resumo = (
-            df_grouped
-            .groupby("Historico")["Valor"]
-            .sum()
-            .sort_values(ascending=False)
-            .reset_index()
-        )
-
-        st.dataframe(resumo, use_container_width=True)
-
-        st.bar_chart(resumo.set_index("Historico"))
+        
 
         # ---------------------------------------------------
         # PREVIEW
