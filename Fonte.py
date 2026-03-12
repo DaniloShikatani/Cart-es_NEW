@@ -41,7 +41,7 @@ if uploaded_file:
 
         historico_filters = [
             'BIN','BANRISUL','CREDZ','ELOSGATE','GETNET','GLOBAL','CIELO','REDE',
-            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','Nu Pay'
+            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','PIX TRANSF  Nu Pay',
         ]
 
         documento_filters = ['12109247','FISERV','REDE-','CIELO']
