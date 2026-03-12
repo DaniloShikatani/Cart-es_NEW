@@ -149,6 +149,9 @@ if uploaded_file:
             ['Filial','Data','Historico','Natureza','Banco','Agencia','Conta']
         ).agg({'Valor':'sum'}).reset_index()
 
+        # Ajuste de formato da data
+        df_grouped['Data'] = df_grouped['Data'].dt.strftime('%d/%m/%Y')
+
         # ---------------------------------------------------
         # COMPLEMENTO CONTÁBIL
         # ---------------------------------------------------
