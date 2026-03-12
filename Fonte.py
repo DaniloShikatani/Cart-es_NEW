@@ -142,6 +142,32 @@ if uploaded_file:
         ]
         df_grouped = df_grouped[colunas_ordenadas]
 
+        df_grouped = df_grouped[colunas_ordenadas]
+
+        # 👇 PREVIEW
+        st.subheader("🔎 Prévia do resultado")
+        st.dataframe(
+        df_grouped.head(50),
+        use_container_width=True
+        )    
+
+        st.caption(f"Mostrando 50 linhas de um total de {len(df_grouped)} registros.")
+
+        # Cria arquivo Excel em memória
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_grouped.to_excel(writer, index=False)
+        output.seek(0)
+
+        st.success("✅ Arquivo processado com sucesso!")
+
+        st.download_button(
+        label="⬇️ Baixar Excel Formatado",
+        data=output,
+        file_name=f"consolidado_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
         # Cria arquivo Excel em memória
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
