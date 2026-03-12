@@ -37,7 +37,7 @@ if uploaded_file:
         # Filtros relevantes
         historico_filters = [
             'BIN', 'BANRISUL', 'CREDZ', 'ELOSGATE', 'GETNET', 'GLOBAL', 'CIELO', 'REDE',
-            'CONTAS A RECEBER TRANSI', 'STONE', 'PAGSEGURO', 'FISERV', 'PAGSEG', 'SISPAG', 'SFPAY'
+            'CONTAS A RECEBER TRANSI', 'STONE', 'PAGSEGURO', 'FISERV', 'PAGSEG', 'SISPAG', 'SFPAY', 'Nu Pay'
         ]
         documento_filters = ['12109247', 'FISERV', 'REDE-', 'CIELO']
 
@@ -50,14 +50,19 @@ if uploaded_file:
         df_filtered = df_filtered[~df_filtered['Historico'].str.contains('MORAIS', na=False)]
 
         # 👉 NOVO: máscara para os códigos especiais no histórico
-        codigos_especiais = [
-            '91270743', '91270749', '2808377759', '2808377740',
-            '87807580', '87808153', '12633893', '12651489',
-            '91046446', '91046449', '2808379700', '2808379697',
-            '12627602', '12627703', '191807527', '191807614',
-            '86571982', '86572679'
-        ]
-        mask_cod_especiais = df_filtered['Historico'].str.contains('|'.join(codigos_especiais), na=False)
+       codigos_macae = [
+    '91046446', '91046449', '2808379700', '2808379697',
+    '12627602', '12627703', '191807527', '191807614'
+]
+
+codigos_bauru = [
+    '91270743', '91270749', '2808377759', '2808377740',
+    '87807580', '87808153', '12633893', '12651489',
+    '86571982', '86572679'
+]
+
+mask_macae = df_filtered['Historico'].str.contains('|'.join(codigos_macae), na=False)
+mask_bauru = df_filtered['Historico'].str.contains('|'.join(codigos_bauru), na=False)    
 
         # Limpeza e transformação de dados
         df_filtered['Agencia'] = df_filtered['Agencia'].apply(lambda x: str(x)[-4:] if x else x)
@@ -82,6 +87,7 @@ if uploaded_file:
             elif 'FISERV' in historico or 'FISERV' in documento: return 'BIN'
             elif 'SFPAY' in historico: return 'SFPAY'
             elif 'SISPAG' in historico: return 'BIN'
+            elif 'Nu Pay' in historico: return 'NUPAY'
             return None
 
         df_filtered['Historico'] = df_filtered.apply(
@@ -99,13 +105,19 @@ if uploaded_file:
             'TEDPAGSEG': 101117,
             'SFPAY': 101119,
             'PAGSEGURO': 101117,
-            'SISPAG PAGSEG': 101117
+            'SISPAG PAGSEG': 101117,
+            'NUPAY': 101121,
         }
 
         df_filtered['Natureza'] = df_filtered['Historico'].map(natureza_map)
 
+
+
         # 👉 NOVO: sobrescreve natureza dos códigos especiais para 100135
-        df_filtered.loc[mask_cod_especiais, 'Natureza'] = 100135
+        df_filtered.loc[mask_macae | mask_bauru, 'Natureza'] = 100135
+
+        df_filtered.loc[mask_macae, 'Historico'] = df_filtered.loc[mask_macae, 'Historico'] + ' - MACAE'
+        df_filtered.loc[mask_bauru, 'Historico'] = df_filtered.loc[mask_bauru, 'Historico'] + ' - BAURU'
 
         # Agrupamento
         df_grouped = df_filtered.groupby(
