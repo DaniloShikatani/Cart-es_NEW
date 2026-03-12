@@ -51,18 +51,18 @@ if uploaded_file:
 
         # 👉 NOVO: máscara para os códigos especiais no histórico
        codigos_macae = [
-    '91046446', '91046449', '2808379700', '2808379697',
-    '12627602', '12627703', '191807527', '191807614'
-]
+        '91046446', '91046449', '2808379700', '2808379697',
+        '12627602', '12627703', '191807527', '191807614'
+        ]
 
-codigos_bauru = [
-    '91270743', '91270749', '2808377759', '2808377740',
-    '87807580', '87808153', '12633893', '12651489',
-    '86571982', '86572679'
-]
+        codigos_bauru = [
+        '91270743', '91270749', '2808377759', '2808377740',
+        '87807580', '87808153', '12633893', '12651489',
+        '86571982', '86572679'
+        ]
 
-mask_macae = df_filtered['Historico'].str.contains('|'.join(codigos_macae), na=False)
-mask_bauru = df_filtered['Historico'].str.contains('|'.join(codigos_bauru), na=False)    
+        mask_macae = df_filtered['Historico'].str.contains('|'.join(codigos_macae), na=False)
+        mask_bauru = df_filtered['Historico'].str.contains('|'.join(codigos_bauru), na=False)    
 
         # Limpeza e transformação de dados
         df_filtered['Agencia'] = df_filtered['Agencia'].apply(lambda x: str(x)[-4:] if x else x)
