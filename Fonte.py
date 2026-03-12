@@ -3,7 +3,8 @@ import pandas as pd
 from datetime import datetime
 import io
 
-st.set_page_config(page_title="Consolidador de Extratos", layout="centered")
+st.set_page_config(page_title="Consolidador de Extratos", layout="wide")
+
 st.title("🏦 Conversor de Extratos Bancários")
 st.markdown("Faça upload do extrato bancário em Excel e baixe o arquivo agrupado e formatado para contabilização.")
 
@@ -11,69 +12,83 @@ uploaded_file = st.file_uploader("📎 Selecione o arquivo Excel (.xlsx)", type=
 
 if uploaded_file:
     try:
-        # Lê o arquivo inteiro como texto bruto
+
+        # ---------------------------------------------------
+        # LEITURA DO ARQUIVO
+        # ---------------------------------------------------
+
         df_raw = pd.read_excel(uploaded_file, header=None, dtype=str, engine='openpyxl')
 
-        # Localiza a linha que contém exatamente 'Deb/Credit'
         linha_cabecalho = None
         for idx, row in df_raw.iterrows():
             if row.astype(str).str.strip().str.lower().isin(['deb/credit']).any():
                 linha_cabecalho = idx
                 break
 
-        # Se não encontrou, exibe erro e para
         if linha_cabecalho is None:
             st.error("❌ Cabeçalho com 'Deb/Credit' não encontrado no arquivo.")
             st.stop()
 
-        # Lê novamente com a linha correta como cabeçalho
         df = pd.read_excel(uploaded_file, header=linha_cabecalho, dtype=str, engine='openpyxl')
         df.columns = df.columns.str.strip()
-        df = df.fillna('')  # Substitui todos os NaN por vazio
+        df = df.fillna('')
 
-        # Filtro por Crédito
+        # ---------------------------------------------------
+        # FILTROS INICIAIS
+        # ---------------------------------------------------
+
         df = df[df['Deb/Credit'] == "Credito"]
 
-        # Filtros relevantes
         historico_filters = [
-            'BIN', 'BANRISUL', 'CREDZ', 'ELOSGATE', 'GETNET', 'GLOBAL', 'CIELO', 'REDE',
-            'CONTAS A RECEBER TRANSI', 'STONE', 'PAGSEGURO', 'FISERV', 'PAGSEG', 'SISPAG', 'SFPAY', 'Nu Pay'
+            'BIN','BANRISUL','CREDZ','ELOSGATE','GETNET','GLOBAL','CIELO','REDE',
+            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','Nu Pay'
         ]
-        documento_filters = ['12109247', 'FISERV', 'REDE-', 'CIELO']
+
+        documento_filters = ['12109247','FISERV','REDE-','CIELO']
 
         df_filtered = df[
             df['Historico'].str.contains('|'.join(historico_filters), na=False) |
             df['Documento'].str.contains('|'.join(documento_filters), na=False)
         ]
 
-        # Remove registros indevidos
         df_filtered = df_filtered[~df_filtered['Historico'].str.contains('MORAIS', na=False)]
 
-       # 👉 NOVO: máscara para os códigos especiais no histórico
+        # ---------------------------------------------------
+        # CÓDIGOS MACAÉ / BAURU
+        # ---------------------------------------------------
+
         codigos_macae = [
-            '91046446', '91046449', '2808379700', '2808379697',
-            '12627602', '12627703', '191807527', '191807614'
+            '91046446','91046449','2808379700','2808379697',
+            '12627602','12627703','191807527','191807614'
         ]
 
         codigos_bauru = [
-            '91270743', '91270749', '2808377759', '2808377740',
-            '87807580', '87808153', '12633893', '12651489',
-            '86571982', '86572679'
+            '91270743','91270749','2808377759','2808377740',
+            '87807580','87808153','12633893','12651489',
+            '86571982','86572679'
         ]
 
-        mask_macae = df['Historico'].str.contains('|'.join(codigos_macae), na=False)
-        mask_bauru = df['Historico'].str.contains('|'.join(codigos_bauru), na=False)
+        mask_macae = df_filtered['Historico'].str.contains('|'.join(codigos_macae), na=False)
+        mask_bauru = df_filtered['Historico'].str.contains('|'.join(codigos_bauru), na=False)
 
-        # Limpeza e transformação de dados
+        # ---------------------------------------------------
+        # LIMPEZA DOS DADOS
+        # ---------------------------------------------------
+
         df_filtered['Agencia'] = df_filtered['Agencia'].apply(lambda x: str(x)[-4:] if x else x)
         df_filtered['Conta'] = pd.to_numeric(df_filtered['Conta'], errors='coerce').fillna(0).astype(int).astype(str)
         df_filtered['Filial'] = df_filtered['Filial'].apply(lambda x: str(x)[:4] if x else x)
+
         df_filtered['Ocorrencia'] = df_filtered['Ocorrencia'].fillna("N/A")
         df_filtered['Data'] = pd.to_datetime(df_filtered['Data'], errors='coerce')
         df_filtered['Valor'] = pd.to_numeric(df_filtered['Valor'], errors='coerce').fillna(0).round(2)
 
-        # Função para identificar a natureza "canal"
+        # ---------------------------------------------------
+        # IDENTIFICAÇÃO DO CANAL
+        # ---------------------------------------------------
+
         def get_natureza(historico, ocorrencia, documento):
+
             if 'BANRISUL' in historico: return 'BANRISUL'
             elif 'BIN' in historico: return 'BIN'
             elif 'CREDZ' in historico or '12109247000120' in documento: return 'CREDZ'
@@ -88,43 +103,56 @@ if uploaded_file:
             elif 'SFPAY' in historico: return 'SFPAY'
             elif 'SISPAG' in historico: return 'BIN'
             elif 'Nu Pay' in historico: return 'NUPAY'
+
             return None
 
         df_filtered['Historico'] = df_filtered.apply(
-            lambda row: get_natureza(row['Historico'], row['Ocorrencia'], row['Documento']), axis=1
+            lambda row: get_natureza(row['Historico'], row['Ocorrencia'], row['Documento']),
+            axis=1
         )
 
+        # ---------------------------------------------------
+        # MAPA DE NATUREZA CONTÁBIL
+        # ---------------------------------------------------
+
         natureza_map = {
-            'BANRISUL': 'A10801',
-            'BIN': 101113,
-            'CREDZ': 101115,
-            'GETNET': 101112,
-            'GLOBAL': 'A10806',
-            'CIELO': 101118,
-            'REDE': 101111,
-            'TEDPAGSEG': 101117,
-            'SFPAY': 101119,
-            'PAGSEGURO': 101117,
-            'SISPAG PAGSEG': 101117,
-            'NUPAY': 101121,
+            'BANRISUL':'A10801',
+            'BIN':101113,
+            'CREDZ':101115,
+            'GETNET':101112,
+            'GLOBAL':'A10806',
+            'CIELO':101118,
+            'REDE':101111,
+            'TEDPAGSEG':101117,
+            'SFPAY':101119,
+            'PAGSEGURO':101117,
+            'SISPAG PAGSEG':101117,
+            'NUPAY':101121,
         }
 
         df_filtered['Natureza'] = df_filtered['Historico'].map(natureza_map)
 
+        # ---------------------------------------------------
+        # AJUSTE MACAÉ / BAURU
+        # ---------------------------------------------------
 
-
-        # 👉 NOVO: sobrescreve natureza dos códigos especiais para 100135
         df_filtered.loc[mask_macae | mask_bauru, 'Natureza'] = 100135
 
         df_filtered.loc[mask_macae, 'Historico'] = df_filtered.loc[mask_macae, 'Historico'] + ' - MACAE'
         df_filtered.loc[mask_bauru, 'Historico'] = df_filtered.loc[mask_bauru, 'Historico'] + ' - BAURU'
 
-        # Agrupamento
-        df_grouped = df_filtered.groupby(
-            ['Filial', 'Data', 'Historico', 'Natureza', 'Banco', 'Agencia', 'Conta']
-        ).agg({'Valor': 'sum'}).reset_index()
+        # ---------------------------------------------------
+        # AGRUPAMENTO
+        # ---------------------------------------------------
 
-        # Complementa colunas
+        df_grouped = df_filtered.groupby(
+            ['Filial','Data','Historico','Natureza','Banco','Agencia','Conta']
+        ).agg({'Valor':'sum'}).reset_index()
+
+        # ---------------------------------------------------
+        # COMPLEMENTO CONTÁBIL
+        # ---------------------------------------------------
+
         df_grouped['TIPO'] = 'R'
         df_grouped['NUMERARIO'] = 'CD'
         df_grouped['NUM CHEQUE'] = ''
@@ -136,45 +164,57 @@ if uploaded_file:
         df_grouped['Cl Valor crd'] = ''
 
         colunas_ordenadas = [
-            'Filial', 'Data', 'NUMERARIO', 'TIPO', 'Valor', 'Natureza', 'Banco', 'Agencia', 'Conta',
-            'NUM CHEQUE', 'Historico', 'C. Custo debito', 'C. Custo credito',
-            'Item debito', 'Item credito', 'Cl Valor deb', 'Cl Valor crd'
+            'Filial','Data','NUMERARIO','TIPO','Valor','Natureza','Banco','Agencia','Conta',
+            'NUM CHEQUE','Historico','C. Custo debito','C. Custo credito',
+            'Item debito','Item credito','Cl Valor deb','Cl Valor crd'
         ]
-        df_grouped = df_grouped[colunas_ordenadas]
 
         df_grouped = df_grouped[colunas_ordenadas]
 
-        # 👇 PREVIEW
+        # ---------------------------------------------------
+        # RESUMO FINANCEIRO
+        # ---------------------------------------------------
+
+        st.subheader("📊 Resumo por canal")
+
+        resumo = (
+            df_grouped
+            .groupby("Historico")["Valor"]
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
+
+        st.dataframe(resumo, use_container_width=True)
+
+        st.bar_chart(resumo.set_index("Historico"))
+
+        # ---------------------------------------------------
+        # PREVIEW
+        # ---------------------------------------------------
+
         st.subheader("🔎 Prévia do resultado")
+
         st.dataframe(
-        df_grouped.head(50),
-        use_container_width=True
-        )    
+            df_grouped.head(50),
+            use_container_width=True
+        )
 
         st.caption(f"Mostrando 50 linhas de um total de {len(df_grouped)} registros.")
 
-        # Cria arquivo Excel em memória
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_grouped.to_excel(writer, index=False)
-        output.seek(0)
+        # ---------------------------------------------------
+        # DOWNLOAD EXCEL
+        # ---------------------------------------------------
 
-        st.success("✅ Arquivo processado com sucesso!")
-
-        st.download_button(
-        label="⬇️ Baixar Excel Formatado",
-        data=output,
-        file_name=f"consolidado_{datetime.now().strftime('%Y%m%d')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-        
-        # Cria arquivo Excel em memória
         output = io.BytesIO()
+
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df_grouped.to_excel(writer, index=False)
+
         output.seek(0)
 
         st.success("✅ Arquivo processado com sucesso!")
+
         st.download_button(
             label="⬇️ Baixar Excel Formatado",
             data=output,
