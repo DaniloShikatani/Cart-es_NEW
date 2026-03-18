@@ -76,7 +76,14 @@ if uploaded_file:
         # ---------------------------------------------------
 
         df_filtered['Agencia'] = df_filtered['Agencia'].apply(lambda x: str(x)[-4:] if x else x)
-        df_filtered['Conta'] = pd.to_numeric(df_filtered['Conta'], errors='coerce').fillna(0).astype(int).astype(str)
+        # conta que não pode perder formatação
+        conta_excecao = '610897103'
+
+        df_filtered['Conta'] = df_filtered['Conta'].astype(str).str.strip()
+
+        df_filtered['Conta'] = df_filtered['Conta'].apply(
+        lambda x: x if x == conta_excecao else str(int(float(x))) if x.replace('.', '', 1).isdigit() else x
+        ) 
         df_filtered['Filial'] = df_filtered['Filial'].apply(lambda x: str(x)[:4] if x else x)
 
         df_filtered['Ocorrencia'] = df_filtered['Ocorrencia'].fillna("N/A")
