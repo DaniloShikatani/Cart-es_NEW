@@ -77,7 +77,7 @@ if uploaded_file:
 
         df_filtered['Agencia'] = df_filtered['Agencia'].apply(lambda x: str(x)[-4:] if x else x)
         # conta que não pode perder formatação
-        conta_excecao = '610897103'
+        conta_excecao = '0610897103'
 
         df_filtered['Conta'] = df_filtered['Conta'].astype(str).str.strip()
 
