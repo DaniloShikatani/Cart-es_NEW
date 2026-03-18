@@ -41,7 +41,7 @@ if uploaded_file:
 
         historico_filters = [
             'BIN','BANRISUL','CREDZ','ELOSGATE','GETNET','GLOBAL','CIELO','REDE',
-            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','PIX TRANSF  Nu Pay', 'VERO',
+            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','PIX TRANSF  Nu Pay', 'VERO BANRI',
         ]
 
         documento_filters = ['12109247','FISERV','REDE-','CIELO']
@@ -102,7 +102,7 @@ if uploaded_file:
             elif 'FISERV' in historico or 'FISERV' in documento: return 'BIN'
             elif 'SFPAY' in historico: return 'SFPAY'
             elif 'SISPAG' in historico: return 'BIN'
-            elif 'SISPAG' in historico: return 'VERO'    
+            elif 'VERO BANRI' in historico: return 'VERO'    
             elif 'PIX TRANSF  Nu Pay' in historico: return 'NUPAY'
 
             return None
