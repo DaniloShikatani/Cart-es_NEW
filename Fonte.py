@@ -41,7 +41,7 @@ if uploaded_file:
 
         historico_filters = [
             'BIN','BANRISUL','CREDZ','ELOSGATE','GETNET','GLOBAL','CIELO','REDE',
-            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','PIX TRANSF  Nu Pay',
+            'CONTAS A RECEBER TRANSI','STONE','PAGSEGURO','FISERV','PAGSEG','SISPAG','SFPAY','PIX TRANSF  Nu Pay', 'VERO',
         ]
 
         documento_filters = ['12109247','FISERV','REDE-','CIELO']
@@ -102,6 +102,7 @@ if uploaded_file:
             elif 'FISERV' in historico or 'FISERV' in documento: return 'BIN'
             elif 'SFPAY' in historico: return 'SFPAY'
             elif 'SISPAG' in historico: return 'BIN'
+            elif 'SISPAG' in historico: return 'VERO'    
             elif 'PIX TRANSF  Nu Pay' in historico: return 'NUPAY'
 
             return None
@@ -128,6 +129,7 @@ if uploaded_file:
             'PAGSEGURO':101117,
             'SISPAG PAGSEG':101117,
             'NUPAY':101121,
+            'VERO':100116,
         }
 
         df_filtered['Natureza'] = df_filtered['Historico'].map(natureza_map)
